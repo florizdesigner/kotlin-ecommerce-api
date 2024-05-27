@@ -1,0 +1,8 @@
+openapi: "3.0.3"
+info:
+  title: "kotlin_ecommerce_api API"
+  description: "kotlin_ecommerce_api API"
+  version: "1.0.0"
+servers:
+- url: "https://kotlin_ecommerce_api"
+paths: {}
