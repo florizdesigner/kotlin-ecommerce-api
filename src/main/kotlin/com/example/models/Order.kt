@@ -12,6 +12,9 @@ interface Order: Entity<Order> {
     var amount: Int
     var userId: Int
     var createdTimestamp: Long?
+
+    fun toOrderResponse(): OrderResponse? =
+        this?.let { OrderResponse(it.id!!, it.description, it.amount, it.userId, it.createdTimestamp!!) }
 }
 
 object Orders: Table<Order>("orders") {

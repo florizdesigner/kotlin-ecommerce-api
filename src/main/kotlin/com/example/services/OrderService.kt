@@ -1,5 +1,8 @@
 package com.example.services
 
+import com.example.config.MAX_ORDER_DESCRIPTION_LENGTH
+import com.example.config.MIN_ORDER_DESCRIPTION_LENGTH
+import com.example.helpers.OrdersHelper
 import com.example.models.CreateOrderRequest
 import com.example.models.Order
 import com.example.models.OrderResponse
@@ -21,8 +24,11 @@ class OrderService {
     )
 
     fun createOrder(orderRequest: CreateOrderRequest): Order? {
-        val currentTimestamp = System.currentTimeMillis() / 1000
+        // limits and description length checker
+        if (!(OrdersHelper().amountLimitsChecker(orderRequest.amount))) return null
+        if (!(OrdersHelper().descriptionLengthChecker(orderRequest.description))) return null
 
+        val currentTimestamp = System.currentTimeMillis() / 1000
         val newOrder = Order {
             description = orderRequest.description
             amount = orderRequest.amount
@@ -36,7 +42,11 @@ class OrderService {
         return queryResult
     }
 
-    fun getOrderById(orderId: UUID): Order? = database.sequenceOf(Orders).find { order -> order.id eq orderId }
+    fun getOrderById(orderId: UUID): Order? {
+//        if (!(OrdersHelper().orderUUIDChecker(orderId.toString()))) return null
+
+        return database.sequenceOf(Orders).find { order -> order.id eq orderId }
+    }
 
     fun getAllOrders(): Set<Order> = database.sequenceOf(Orders).toSet()
 

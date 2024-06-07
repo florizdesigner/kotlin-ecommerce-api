@@ -1,5 +1,9 @@
 package com.example.routes
 
+import com.example.config.MAX_ORDER_DESCRIPTION_LENGTH
+import com.example.config.MIN_ORDER_DESCRIPTION_LENGTH
+import com.example.helpers.ApiResponseStatuses
+import com.example.helpers.OrdersHelper
 import com.example.models.*
 import com.example.services.OrderService
 import io.ktor.http.*
@@ -45,11 +49,24 @@ fun Route.createOrder(orderService: OrderService) {
         try {
             val request = call.receive<CreateOrderRequest>()
 
+            if (!(OrdersHelper().amountLimitsChecker(request.amount))) throw IllegalArgumentException("Wow! You have exceeded the order amount limit! Min = 1 ruble, max = 350000 ruble.")
+            if (!(OrdersHelper().descriptionLengthChecker(request.description))) throw IllegalArgumentException("description must be between $MIN_ORDER_DESCRIPTION_LENGTH and $MAX_ORDER_DESCRIPTION_LENGTH")
+
             call.application.environment.log.info("Started request")
             orderService.createOrder(orderRequest = request)
                 ?.let { createdOrder -> createdOrder.toOrderResponse() }
-                ?.let { response -> call.respond(HttpStatusCode.Created, response)}
-                ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse("failed","Can't create order"))
+                ?.let { response -> call.respond(HttpStatusCode.Created, ApiSuccessOrderResponse(
+                    status = ApiResponseStatuses.SUCCESS.status,
+                    order = response
+                ))}
+                ?: return@post call.respond(HttpStatusCode.BadRequest, ApiResponse(
+                    status = ApiResponseStatuses.FAILED.status,
+                    message = "Can't create order"))
+        } catch (e: IllegalArgumentException) {
+            return@post call.respond(HttpStatusCode.BadRequest, ApiResponse(
+                status = ApiResponseStatuses.FAILED.status,
+                message = e.message.toString()
+            ))
         } catch (e: Exception) {
             print(e)
             throw e
@@ -65,7 +82,10 @@ fun Route.getOrderById(orderService: OrderService) {
 
             orderService.getOrderById(UUID.fromString(id))
                 ?.let { order -> order.toOrderResponse() }
-                ?.let { response -> call.respond(HttpStatusCode.OK, response) }
+                ?.let { response -> call.respond(HttpStatusCode.OK, ApiSuccessOrderResponse(
+                    status = ApiResponseStatuses.SUCCESS.status,
+                    order = response
+                )) }
                 ?: return@get call.respond(HttpStatusCode.BadRequest, ApiResponse("failed","Order id is not found"))
         } catch (e: IllegalArgumentException) {
             return@get call.respond(HttpStatusCode.BadRequest, ApiResponse("failed", e.message.toString()))
@@ -81,7 +101,7 @@ fun Route.getAllOrders(orderService: OrderService) {
         val orders = orderService.getAllOrders()
             .map(Order::toOrderResponse)
 
-        call.respond(message = OrdersResponse("success", orders))
+        call.respond(message = ApiSuccessOrdersResponse("success", orders))
     }
 }
 

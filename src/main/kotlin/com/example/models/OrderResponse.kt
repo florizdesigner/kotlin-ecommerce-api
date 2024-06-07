@@ -18,7 +18,13 @@ data class OrderResponse(
 )
 
 @Serializable
-data class OrdersResponse(
+data class ApiSuccessOrderResponse(
+    val status: String,
+    val order: OrderResponse
+)
+
+@Serializable
+data class ApiSuccessOrdersResponse(
     val status: String,
     val orders: List<OrderResponse?>
 )
